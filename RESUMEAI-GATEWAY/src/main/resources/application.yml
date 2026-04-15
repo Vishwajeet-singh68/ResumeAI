@@ -1,0 +1,45 @@
+spring:
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+
+      routes:
+        # PUBLIC ROUTES
+              - id: auth-service-public
+                uri: lb://AUTH-SERVICE
+                predicates:
+                  - Path=/auth/**
+
+              # PROTECTED ROUTES
+              - id: user-service
+                uri: lb://AUTH-SERVICE
+                predicates:
+                  - Path=/user/**
+                filters:
+                  - AuthFilter
+
+              - id: template-service
+                uri: lb://TEMPLATE-SERVICE
+                predicates:
+                  - Path=/api/templates/**
+
+              - id: resume-service
+                uri: lb://RESUME-SERVICE
+                predicates:
+                  - Path=/api/resumes/**
+                filters:
+                  - AuthFilter
+
