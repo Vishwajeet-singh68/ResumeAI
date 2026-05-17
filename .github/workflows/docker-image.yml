@@ -1,4 +1,4 @@
-name: ResumeAI Microservices CI/CD
+name: ResumeAI CI/CD
 
 on:
   push:
@@ -22,13 +22,8 @@ jobs:
       matrix:
         service:
           - AUTH-SERVICE
-          - AICONTENT-SERVICE
-          - NOTIFICATION-SERVICE
-          - RESUME-SECTION-SERVICE
-          - RESUME-SERVICE
           - RESUMEAI-GATEWAY
           - SERVICE-REGISTRY
-          - TEMPLATE-SERVICE
 
     steps:
 
@@ -38,7 +33,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
