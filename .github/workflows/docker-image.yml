@@ -1,4 +1,4 @@
-name: ResumeAI CI/CD
+name: SERVICE-REGISTRY CI/CD
 
 on:
   push:
@@ -19,13 +19,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        service:
-          - AUTH-SERVICE
-          - RESUMEAI-GATEWAY
-          - SERVICE-REGISTRY
-
     steps:
 
       - name: Checkout Repository
@@ -39,15 +32,15 @@ jobs:
           cache: maven
 
       - name: Give Execute Permission to Maven Wrapper
-        working-directory: ./${{ matrix.service }}
+        working-directory: ./SERVICE-REGISTRY
         run: chmod +x mvnw
 
       - name: Build Spring Boot Application
-        working-directory: ./${{ matrix.service }}
+        working-directory: ./SERVICE-REGISTRY
         run: ./mvnw clean install -DskipTests
 
       - name: Run Unit Tests
-        working-directory: ./${{ matrix.service }}
+        working-directory: ./SERVICE-REGISTRY
         run: ./mvnw test
 
       - name: Login to Docker Hub
@@ -56,16 +49,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Convert Service Name to Lowercase
-        id: vars
-        run: |
-          echo "IMAGE_NAME=$(echo '${{ matrix.service }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
       - name: Build Docker Image
-        working-directory: ./${{ matrix.service }}
+        working-directory: ./SERVICE-REGISTRY
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/service-registry:latest .
 
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/service-registry:latest
