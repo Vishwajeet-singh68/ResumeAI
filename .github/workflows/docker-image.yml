@@ -24,12 +24,12 @@ jobs:
         service:
           - AUTH-SERVICE
           - AICONTENT-SERVICE
-          - NOTIFICATION-SERVICE
-          - RESUME-SECTION-SERVICE
+          # - NOTIFICATION-SERVICE
+          # - RESUME-SECTION-SERVICE
           - RESUME-SERVICE
           - RESUMEAI-GATEWAY
           - SERVICE-REGISTRY
-          - TEMPLATE-SERVICE
+          # - TEMPLATE-SERVICE
 
     steps:
 
