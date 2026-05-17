@@ -1,7 +1,11 @@
-name: ResumeAI CI/CD
+name: ResumeAI Microservices CI/CD
 
 on:
   push:
+    branches:
+      - main
+
+  pull_request:
     branches:
       - main
 
@@ -18,9 +22,14 @@ jobs:
     strategy:
       matrix:
         service:
-          - SERVICE-REGISTRY
-          - RESUMEAI-GATEWAY
           - AUTH-SERVICE
+          - AICONTENT-SERVICE
+          - NOTIFICATION-SERVICE
+          - RESUME-SECTION-SERVICE
+          - RESUME-SERVICE
+          - RESUMEAI-GATEWAY
+          - SERVICE-REGISTRY
+          - TEMPLATE-SERVICE
 
     steps:
 
