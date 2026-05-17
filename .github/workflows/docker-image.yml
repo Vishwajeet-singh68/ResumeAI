@@ -24,6 +24,7 @@ jobs:
         service:
           - SERVICE-REGISTRY
           - RESUMEAI-GATEWAY
+          - AUTH-SERVICE
 
     steps:
 
