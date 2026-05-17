@@ -22,9 +22,8 @@ jobs:
     strategy:
       matrix:
         service:
-          - AUTH-SERVICE
-          - RESUMEAI-GATEWAY
           - SERVICE-REGISTRY
+          - RESUMEAI-GATEWAY
 
     steps:
 
@@ -57,7 +56,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Convert Service Name to Lowercase
-        id: vars
         run: |
           echo "IMAGE_NAME=$(echo '${{ matrix.service }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
