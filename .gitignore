@@ -1,0 +1,46 @@
+# Java / Maven
+**/target/
+**/target/**
+.mvn/wrapper/maven-wrapper.jar
+**/mvnw
+**/mvnw.cmd
+
+# Node / Angular
+**/node_modules/
+**/dist/
+**/tmp/
+**/.angular/
+**/out-tsc/
+**/bazel-out/
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Environment / Sensitive
+.env
+.env.*
+!.env.example
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+**/logs/
+
+# Testing
+**/coverage/
+
+# Docker
+.docker/
