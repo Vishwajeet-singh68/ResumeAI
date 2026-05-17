@@ -3,6 +3,8 @@ package com.auth.service;
 import com.auth.dto.*;
 import com.auth.entity.User;
 
+import java.util.List;
+
 public interface AuthService {
 
     // 🔐 Register new user
@@ -31,4 +33,9 @@ public interface AuthService {
 
     // 💳 Update subscription plan
     void updateSubscription(Integer id, String plan);
+
+    List<User> allUsers();
+
+    // 🗑️ Delete user by ID
+    void deleteUser(Integer id);
 }

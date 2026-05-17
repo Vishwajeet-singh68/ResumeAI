@@ -3,9 +3,15 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 
+  instance:
+    prefer-ip-address: true
+
 spring:
   application:
     name: AUTH-SERVICE
 
 server:
   port: 8081
+
+
+

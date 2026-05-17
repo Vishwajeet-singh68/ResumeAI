@@ -1,5 +1,6 @@
 package org.app.aicontentservice.service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ public interface AiService {
 
     String generateCoverLetter(int userId, String resume, String jobDesc);
 
-    String improveSection(int userId, String section, String jobDesc);
+    String improveSection(int userId, String section, String jobDesc, String jobTitle);
 
     String checkAtsCompatibility(int userId, String resume);
 
@@ -24,4 +25,12 @@ public interface AiService {
     int getRemainingQuota(int userId);
 
     Map<String, String> translateResume(int userId, String resume);
+
+    public List<String> extractSkills(String resume);
+
+    public String getExperienceLevel(String resume);
+
+    public List<String> extractKeywords(String resume);
+
+    public List<String> generateRecommendations(int userId, String resume, String jobDesc);
 }

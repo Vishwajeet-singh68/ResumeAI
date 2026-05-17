@@ -1,5 +1,7 @@
 package org.app.aicontentservice.client;
 
+import com.google.genai.Client;
+import com.google.genai.types.GenerateContentResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -17,26 +19,22 @@ public class GeminiClient {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    @Value("${gemini.api.url}")
-    private String apiUrl;
-
     public String generate(String prompt) {
+        // The try-with-resources is correct as the Client is AutoCloseable
+        try (Client client = Client.builder()
+                .apiKey(apiKey)
+                .build()) {
 
-        Map<String, Object> body = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", prompt)
-                        ))
-                )
-        );
+            GenerateContentResponse response =
+                    client.models.generateContent(
+                            "gemini-3-flash-preview", // Updated Model ID
+                            prompt,
+                            null);
 
-        return webClient.post()
-                .uri(apiUrl)
-                .header("X-goog-api-key", apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+            return response.text();
+        } catch (Exception e) {
+            // It is good practice to handle potential API errors
+            return "Error calling Gemini API: " + e.getMessage();
+        }
     }
 }

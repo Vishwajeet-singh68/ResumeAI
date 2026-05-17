@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 public class ResumeDTO {
 
+    private Integer resumeId;
     private Integer userId;
     private String title;
     private String targetJobTitle;

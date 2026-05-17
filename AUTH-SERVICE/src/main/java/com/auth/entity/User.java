@@ -1,11 +1,13 @@
 package com.auth.entity;
 
+import com.auth.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -37,7 +39,7 @@ public class User implements UserDetails {
     private String phone;
 
     @Column(name = "role", nullable = false)
-    private String role; // ROLE_USER, ROLE_ADMIN
+    private String role;
 
     @Column(name = "is_active")
     private boolean isActive;
@@ -52,6 +54,7 @@ public class User implements UserDetails {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.isActive = true;
+        this.subscriptionPlan="FREE";
     }
 
     @Override
@@ -60,7 +63,32 @@ public class User implements UserDetails {
     }
 
     @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
     public String getUsername() {
         return email;
     }
-}
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}

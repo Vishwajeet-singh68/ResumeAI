@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.regex.*;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +18,9 @@ public class AiServiceImpl implements AiService {
     private final GeminiClient geminiClient;
     private final AiRequestRepository repo;
 
-    // 🔥 CORE PROCESS METHOD (COMMON FOR ALL AI CALLS)
+    // =========================================
+    // 🔥 CORE PROCESS METHOD
+    // =========================================
     private String process(int userId, String type, String prompt) {
 
         validateQuota(userId);
@@ -47,11 +50,9 @@ public class AiServiceImpl implements AiService {
 
         try {
             String raw = geminiClient.generate(finalPrompt);
-
-            String result = GeminiParser.getText(raw);
             int tokens = GeminiParser.getTokens(raw);
 
-            req.setAiResponse(result);
+            req.setAiResponse(raw);
             req.setTokensUsed(tokens);
             req.setModel("GEMINI");
             req.setStatus("COMPLETED");
@@ -59,24 +60,32 @@ public class AiServiceImpl implements AiService {
 
             repo.save(req);
 
-            return result;
+            return raw;
 
         } catch (Exception e) {
             req.setStatus("FAILED");
             repo.save(req);
-            e.printStackTrace();
             throw new RuntimeException("AI failed: " + e.getMessage());
         }
     }
 
-    // 🔒 QUOTA CHECK
+    // =========================================
+    // 🔒 QUOTA
+    // =========================================
     private void validateQuota(int userId) {
         if (repo.countByUserIdToday(userId) > 50) {
             throw new RuntimeException("Daily limit exceeded");
         }
     }
 
+    @Override
+    public int getRemainingQuota(int userId) {
+        return 50 - repo.countByUserIdToday(userId);
+    }
+
+    // =========================================
     // 🧠 SUMMARY
+    // =========================================
     @Override
     public String generateSummary(int userId, String resume, String jobDesc) {
         return process(userId, "SUMMARY", """
@@ -90,35 +99,37 @@ public class AiServiceImpl implements AiService {
         """.formatted(resume, jobDesc));
     }
 
-    // 📌 BULLET POINTS
+    // =========================================
+    // 📌 BULLETS
+    // =========================================
     @Override
     public List<String> generateBulletPoints(int userId, String exp, String jobDesc) {
 
         String res = process(userId, "BULLETS", """
-        Convert the experience into 5 strong resume bullet points.
+        Convert the experience into exactly 3 strong resume bullet points.
 
-        Format:
-        - point 1
-        - point 2
-        - point 3
-        - point 4
-        - point 5
+        Rules:
+        - Use action verbs
+        - Max 20 words each
+        - Start with "-"
+        - No extra text
 
         Experience:
         %s
         """.formatted(exp));
 
-        return Arrays.stream(res.split("\n"))
-                .filter(line -> line.trim().startsWith("-"))
-                .map(line -> line.replaceFirst("-", "").trim())
-                .toList();
+        return parseBullets(res, 3);
     }
 
+    // =========================================
     // 📄 COVER LETTER
+    // =========================================
     @Override
     public String generateCoverLetter(int userId, String resume, String jobDesc) {
         return process(userId, "COVER_LETTER", """
         Write a professional cover letter (150-200 words).
+
+        Use candidate details if available.
 
         Resume:
         %s
@@ -128,47 +139,56 @@ public class AiServiceImpl implements AiService {
         """.formatted(resume, jobDesc));
     }
 
+    // =========================================
     // ✨ IMPROVE SECTION
+    // =========================================
     @Override
-    public String improveSection(int userId, String section, String jobDesc) {
+    public String improveSection(int userId, String section, String content, String jobTitle) {
         return process(userId, "IMPROVE", """
-        Rewrite this section using strong action verbs and impact.
+        Improve the following %s section for %s role.
 
-        Return only improved version.
+        Rules:
+        - Keep meaning same
+        - No fake data
+        - Improve clarity only
+        - ATS-friendly
 
-        Section:
+        Content:
         %s
-        """.formatted(section));
+        """.formatted(section, jobTitle, content));
     }
 
-    // 📊 ATS CHECK
+    // =========================================
+    // 📊 ATS
+    // =========================================
     @Override
     public String checkAtsCompatibility(int userId, String resume) {
         return process(userId, "ATS", """
-        Analyze resume for ATS compatibility.
+        Analyze resume for ATS.
 
-        Format:
-        Score: <0-100>
-        Strengths:
-        - ...
-        Weaknesses:
-        - ...
-        Suggestions:
-        - ...
+        Return ONLY JSON:
+        {
+          "score": number,
+          "strengths": [],
+          "weaknesses": [],
+          "suggestions": []
+        }
 
         Resume:
         %s
         """.formatted(resume));
     }
 
-    // 🧠 SKILLS
+    // =========================================
+    // 🧠 SKILLS (AI + SAFE PARSE)
+    // =========================================
     @Override
     public List<String> suggestSkills(int userId, String jobDesc) {
 
         String res = process(userId, "SKILLS", """
         Extract top 10 relevant skills.
 
-        Return ONLY comma separated values.
+        Return comma-separated values ONLY.
 
         Job Description:
         %s
@@ -177,16 +197,20 @@ public class AiServiceImpl implements AiService {
         return Arrays.stream(res.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
+                .distinct()
+                .limit(10)
                 .toList();
     }
 
-    // 🎯 TAILOR RESUME
+    // =========================================
+    // 🎯 TAILOR
+    // =========================================
     @Override
     public String tailorResumeForJob(int userId, String resume, String jobDesc) {
         return process(userId, "TAILOR", """
-        Tailor this resume for the job.
+        Tailor resume for job.
 
-        Keep structure same but improve content relevance.
+        Keep structure same.
 
         Resume:
         %s
@@ -196,12 +220,14 @@ public class AiServiceImpl implements AiService {
         """.formatted(resume, jobDesc));
     }
 
+    // =========================================
     // 🌍 TRANSLATE
+    // =========================================
     @Override
     public Map<String, String> translateResume(int userId, String resume) {
 
         String res = process(userId, "TRANSLATE", """
-        Translate this resume into simple professional English.
+        Translate to professional English.
 
         Resume:
         %s
@@ -210,15 +236,104 @@ public class AiServiceImpl implements AiService {
         return Map.of("translated", res);
     }
 
+    // =========================================
     // 📜 HISTORY
+    // =========================================
     @Override
     public List<?> getAiHistory(int userId) {
         return repo.findByUserId(userId);
     }
 
-    // 📊 QUOTA
+    // =========================================
+    // 🔥 AI-BASED RECOMMENDATIONS
+    // =========================================
     @Override
-    public int getRemainingQuota(int userId) {
-        return 50 - repo.countByUserIdToday(userId);
+    public List<String> generateRecommendations(int userId, String resume, String jobDesc) {
+
+        String res = process(userId, "RECOMMENDATIONS", """
+        Act as a career coach.
+
+        Give 5-7 improvement suggestions.
+
+        Rules:
+        - Start each with "-"
+        - Be specific
+        - No generic advice
+
+        Resume:
+        %s
+
+        Job Description:
+        %s
+        """.formatted(resume, jobDesc));
+
+        return parseBullets(res, 7);
+    }
+
+    // =========================================
+    // ⚙️ NON-AI HELPERS (FAST)
+    // =========================================
+
+    @Override
+    public List<String> extractSkills(String resume) {
+
+        Set<String> skills = new HashSet<>();
+
+        String[] known = {
+                "Java", "Spring Boot", "React", "Node.js",
+                "MongoDB", "MySQL", "Docker", "AWS"
+        };
+
+        String lower = resume.toLowerCase();
+
+        for (String s : known) {
+            if (lower.contains(s.toLowerCase())) {
+                skills.add(s);
+            }
+        }
+
+        return new ArrayList<>(skills);
+    }
+
+    @Override
+    public String getExperienceLevel(String resume) {
+
+        Matcher m = Pattern.compile("(\\d+)\\s*year").matcher(resume.toLowerCase());
+
+        if (resume.toLowerCase().contains("intern")) return "Fresher";
+
+        if (m.find()) {
+            int y = Integer.parseInt(m.group(1));
+            if (y <= 1) return "Fresher";
+            if (y <= 3) return "Junior";
+            if (y <= 6) return "Mid-Level";
+            return "Senior";
+        }
+
+        return "Unknown";
+    }
+
+    @Override
+    public List<String> extractKeywords(String resume) {
+
+        String[] keys = {"backend", "api", "cloud", "microservices"};
+
+        return Arrays.stream(keys)
+                .filter(k -> resume.toLowerCase().contains(k))
+                .toList();
+    }
+
+    // =========================================
+    // 🧩 COMMON PARSER
+    // =========================================
+    private List<String> parseBullets(String res, int limit) {
+
+        return Arrays.stream(res.split("\n"))
+                .map(String::trim)
+                .filter(line -> line.startsWith("-"))
+                .map(line -> line.replaceFirst("^[-\\s]+", "").trim())
+                .filter(s -> !s.isEmpty())
+                .limit(limit)
+                .toList();
     }
 }

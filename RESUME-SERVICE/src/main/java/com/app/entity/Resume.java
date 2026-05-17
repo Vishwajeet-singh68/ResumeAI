@@ -3,6 +3,7 @@ package com.app.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Resume {
+public class Resume implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

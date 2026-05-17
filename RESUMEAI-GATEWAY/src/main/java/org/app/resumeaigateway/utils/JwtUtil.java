@@ -44,11 +44,17 @@ public class JwtUtil {
 
     // ✅ Extract userId (custom claim)
     public String extractUserId(String token) {
-        return getClaims(token).get("userId", String.class);
+        Object userId = getClaims(token).get("userId");
+        return userId != null ? userId.toString() : null;
     }
 
     // ✅ Extract role (optional 🔥)
     public String extractRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+    
+    // ✅ Extract subscription (optional)
+    public String extractSubscriptionPlan(String token) {
+        return getClaims(token).get("subscriptionPlan", String.class);
     }
 }

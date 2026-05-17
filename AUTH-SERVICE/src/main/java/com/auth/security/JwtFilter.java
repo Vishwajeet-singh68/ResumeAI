@@ -29,24 +29,23 @@ public class JwtFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // ✅ 1. Check header
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // ✅ 2. Extract token
+
             final String token = authHeader.substring(7);
             final String username = jwtService.extractUsername(token);
 
-            // ✅ 3. Validate context
+
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 UserDetails userDetails = userService.loadUserByUsername(username);
 
-                // ✅ 4. Validate token
                 if (jwtService.isValid(token, userDetails)) {
 
                     UsernamePasswordAuthenticationToken authToken =
@@ -56,24 +55,20 @@ public class JwtFilter extends OncePerRequestFilter {
                                     userDetails.getAuthorities()
                             );
 
-                    // ✅ 5. Attach request details (IMPORTANT 🔥)
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
 
-                    // ✅ 6. Set authentication
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
 
         } catch (Exception ex) {
-            // ✅ 7. Handle invalid token safely
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid or Expired Token");
             return;
         }
 
-        // ✅ 8. Continue filter chain
         filterChain.doFilter(request, response);
     }
 }

@@ -6,6 +6,9 @@ import com.app.exception.ResourceNotFoundException;
 import com.app.mapper.ResumeMapper;
 import com.app.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,42 +21,47 @@ public class ResumeServiceImpl implements ResumeService {
     private final ResumeMapper mapper;
 
     @Override
-    public ResumeDTO createResume(ResumeDTO dto) {
+    @CacheEvict(value = "resumes", allEntries = true)
+    public Resume createResume(ResumeDTO dto) {
         Resume resume = mapper.toEntity(dto);
-        return mapper.toDTO(repository.save(resume));
+        return repository.save(resume);
     }
 
     @Override
-    public ResumeDTO getResumeById(int id) {
-        Resume resume = repository.findById(id)
+    @Cacheable(value = "resumes", key = "#id")
+    public Resume getResumeById(int id) {
+        return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
-        return mapper.toDTO(resume);
     }
 
     @Override
-    public List<ResumeDTO> getResumesByUser(int userId) {
+    @Cacheable(value = "resumes", key = "'user_' + #userId")
+    public List<Resume> getResumesByUser(int userId) {
         return repository.findByUserId(userId)
                 .stream()
-                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
-    public ResumeDTO updateResume(int id, ResumeDTO dto) {
+    @CachePut(value = "resumes", key = "#id")
+    @CacheEvict(value = "resumes", key = "'user_' + #dto.userId")
+    public Resume updateResume(int id, ResumeDTO dto) {
         Resume resume = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
 
         mapper.updateResumeFromDto(dto, resume);
-        return mapper.toDTO(repository.save(resume));
+        return repository.save(resume);
     }
 
     @Override
+    @CacheEvict(value = "resumes", allEntries = true)
     public void deleteResume(int id) {
         repository.deleteById(id);
     }
 
     @Override
-    public ResumeDTO duplicateResume(int id) {
+    @CacheEvict(value = "resumes", allEntries = true)
+    public Resume duplicateResume(int id) {
         Resume original = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
 
@@ -69,10 +77,11 @@ public class ResumeServiceImpl implements ResumeService {
                 .viewCount(0)
                 .build();
 
-        return mapper.toDTO(repository.save(copy));
+        return repository.save(copy);
     }
 
     @Override
+    @CacheEvict(value = "resumes", key = "#id")
     public void updateAtsScore(int id, int score) {
         Resume resume = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
@@ -82,6 +91,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
+    @CacheEvict(value = "resumes", key = "#id")
     public void publishResume(int id) {
         Resume resume = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
@@ -91,6 +101,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
+    @CacheEvict(value = "resumes", key = "#id")
     public void unpublishResume(int id) {
         Resume resume = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
@@ -100,14 +111,15 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public List<ResumeDTO> getPublicResumes() {
+    @Cacheable(value = "resumes", key = "'public'")
+    public List<Resume> getPublicResumes() {
         return repository.findByIsPublic(true)
                 .stream()
-                .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
+    @CacheEvict(value = "resumes", key = "#id")
     public void incrementViewCount(int id) {
         Resume resume = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
@@ -120,10 +132,10 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public List<ResumeDTO> getResumesByTemplate(int templateId) {
+    @Cacheable(value = "resumes", key = "'template_' + #templateId")
+    public List<Resume> getResumesByTemplate(int templateId) {
         return repository.findByTemplateId(templateId)
                 .stream()
-                .map(mapper::toDTO)
                 .toList();
     }
-}
+}

@@ -1,6 +1,15 @@
+server:
+  port: 8080
+
 spring:
+  application:
+    name: API-GATEWAY
+
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -15,31 +24,72 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
-
       routes:
-        # PUBLIC ROUTES
-              - id: auth-service-public
-                uri: lb://AUTH-SERVICE
-                predicates:
-                  - Path=/auth/**
 
-              # PROTECTED ROUTES
-              - id: user-service
-                uri: lb://AUTH-SERVICE
-                predicates:
-                  - Path=/user/**
-                filters:
-                  - AuthFilter
+        # ================= AUTH SERVICE =================
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth/**
 
-              - id: template-service
-                uri: lb://TEMPLATE-SERVICE
-                predicates:
-                  - Path=/api/templates/**
+        - id: user-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/user/**
+          filters:
+            - AuthFilter
 
-              - id: resume-service
-                uri: lb://RESUME-SERVICE
-                predicates:
-                  - Path=/api/resumes/**
-                filters:
-                  - AuthFilter
+        # ================= TEMPLATE SERVICE =================
+        - id: template-service
+          uri: lb://TEMPLATE-SERVICE
+          predicates:
+            - Path=/api/templates/**
 
+        # ================= RESUME SERVICE =================
+        - id: resume-service
+          uri: lb://RESUME-SERVICE
+          predicates:
+            - Path=/api/resumes/**
+          filters:
+            - AuthFilter
+
+        # ================= AI CONTENT SERVICE =================
+        - id: ai-service
+          uri: lb://AICONTENT-SERVICE
+          predicates:
+            - Path=/ai/**
+          filters:
+            - AuthFilter
+
+        # ================= NOTIFICATION SERVICE =================
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - AuthFilter
+
+# ================= SWAGGER AGGREGATION =================
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /auth/v3/api-docs
+      - name: Resume Service
+        url: /api/resumes/v3/api-docs
+      - name: Template Service
+        url: /api/templates/v3/api-docs
+      - name: AI Content Service
+        url: /ai/v3/api-docs
+
+# ================= EUREKA CONFIG =================
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: true

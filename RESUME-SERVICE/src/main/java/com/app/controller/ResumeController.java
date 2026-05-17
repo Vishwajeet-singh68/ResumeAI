@@ -1,6 +1,7 @@
 package com.app.controller;
 
 import com.app.dto.ResumeDTO;
+import com.app.entity.Resume;
 import com.app.service.ResumeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,22 +18,22 @@ public class ResumeController {
     private final ResumeService service;
 
     @PostMapping
-    public ResponseEntity<ResumeDTO> createResume(@Valid @RequestBody ResumeDTO dto) {
+    public ResponseEntity<Resume> createResume(@Valid @RequestBody ResumeDTO dto) {
         return ResponseEntity.ok(service.createResume(dto));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResumeDTO> getResume(@PathVariable int id) {
+    public ResponseEntity<Resume> getResume(@PathVariable int id) {
         return ResponseEntity.ok(service.getResumeById(id));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ResumeDTO>> getByUser(@PathVariable int userId) {
+    public ResponseEntity<List<Resume>> getByUser(@PathVariable int userId) {
         return ResponseEntity.ok(service.getResumesByUser(userId));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResumeDTO> updateResume(
+    public ResponseEntity<Resume> updateResume(
             @PathVariable int id,
             @Valid @RequestBody ResumeDTO dto
     ) {
@@ -46,7 +47,7 @@ public class ResumeController {
     }
 
     @PostMapping("/{id}/duplicate")
-    public ResponseEntity<ResumeDTO> duplicate(@PathVariable int id) {
+    public ResponseEntity<Resume> duplicate(@PathVariable int id) {
         return ResponseEntity.ok(service.duplicateResume(id));
     }
 
@@ -72,7 +73,7 @@ public class ResumeController {
     }
 
     @GetMapping("/public")
-    public ResponseEntity<List<ResumeDTO>> getPublicResumes() {
+    public ResponseEntity<List<Resume>> getPublicResumes() {
         return ResponseEntity.ok(service.getPublicResumes());
     }
 
@@ -83,7 +84,7 @@ public class ResumeController {
     }
 
     @GetMapping("/template/{templateId}")
-    public ResponseEntity<List<ResumeDTO>> getByTemplate(@PathVariable int templateId) {
+    public ResponseEntity<List<Resume>> getByTemplate(@PathVariable int templateId) {
         return ResponseEntity.ok(service.getResumesByTemplate(templateId));
     }
 }

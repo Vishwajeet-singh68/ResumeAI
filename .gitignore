@@ -1,6 +1,13 @@
 # Java / Maven
+target/
 **/target/
 **/target/**
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.class
 .mvn/wrapper/maven-wrapper.jar
 **/mvnw
 **/mvnw.cmd

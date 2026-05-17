@@ -5,6 +5,8 @@ import com.auth.entity.User;
 import com.auth.repository.UserRepository;
 import com.auth.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     public AuthResponse register(RegisterRequest request) {
 
@@ -37,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtService.generateToken(user);
 
-        return new AuthResponse(token);
+        return new AuthResponse(user.getUserId(),token, user.getFullName(), user.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -52,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtService.generateToken(user);
 
-        return new AuthResponse(token);
+        return new AuthResponse(user.getUserId(), token, user.getFullName(), user.getEmail());
     }
     @Override
     public boolean validateToken(String token) {
@@ -99,6 +104,12 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    public List<User> allUsers(){
+        List<User> allUsers =  repo.findAll();
+        return allUsers;
+    }
+
+//    @Cacheable(value = "user", key = "#id")
     @Override
     public UserResponse getUserById(Integer id) {
         User user =  repo.findByUserId(id).orElseThrow(()->new RuntimeException("user not found"));
@@ -142,6 +153,27 @@ public class AuthServiceImpl implements AuthService {
 
         user.setSubscriptionPlan(plan);
 
+        repo.save(user);
+        
+        try {
+            com.auth.dto.UserRoleEvent event = new com.auth.dto.UserRoleEvent(
+                Long.valueOf(user.getUserId()), 
+                user.getFullName(), 
+                plan
+            );
+            rabbitTemplate.convertAndSend("notification_exchange", "user.role.upgrade", event);
+        } catch (Exception e) {
+            System.err.println("Failed to publish user role event: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteUser(Integer id) {
+        User user = repo.findByUserId(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Soft delete — deactivate the user account
+        user.setActive(false);
         repo.save(user);
     }
 }

@@ -1,12 +1,21 @@
 ai:
   openai:
     url: https://api.openai.com/v1/chat/completions
-    api-key: YOUR_OPENAI_KEY
+    api-key: ${OPENAI_API_KEY:YOUR_OPENAI_KEY}
     model: gpt-4o
 
   claude:
     url: https://api.anthropic.com/v1/messages
-    api-key: YOUR_CLAUDE_KEY
+    api-key: ${CLAUDE_API_KEY:YOUR_CLAUDE_KEY}
     model: claude-3-sonnet-20240229
 
   timeout: 30
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+  instance:
+    prefer-ip-address: true
