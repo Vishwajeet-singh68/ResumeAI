@@ -51,8 +51,15 @@ public class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-//        registerRequest = new RegisterRequest("John Doe", "john@example.com", "password123");
-//        loginRequest = new LoginRequest("john@example.com", "password123");
+        registerRequest = new RegisterRequest();
+        registerRequest.setFullName("John Doe");
+        registerRequest.setEmail("john@example.com");
+        registerRequest.setPassword("password123");
+
+        loginRequest = new LoginRequest();
+        loginRequest.setEmail("john@example.com");
+        loginRequest.setPassword("password123");
+
         user = User.builder()
                 .userId(1)
                 .fullName("John Doe")
@@ -98,7 +105,7 @@ public class AuthServiceTest {
 
         assertEquals("PREMIUM", user.getSubscriptionPlan());
         verify(repo, times(1)).save(user);
-        verify(rabbitTemplate, times(1)).convertAndSend(eq("notification_exchange"), eq("user.role.upgrade"));
+        verify(rabbitTemplate, times(1)).convertAndSend(eq("notification_exchange"), eq("user.role.upgrade"), any(com.auth.dto.UserRoleEvent.class));
     }
 
     @Test
